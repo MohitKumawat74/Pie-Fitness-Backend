@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Fitness Gym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
+            border-radius: 22px;
+            z-index: -1;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            color: #333;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #667eea;
+        }
+
+        .logo p {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .dashboard-container {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1200px;
+            padding: 2rem;
+            margin: 2rem auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .api-info {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .api-info h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .api-endpoint {
+            background: #fff;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 5px;
+            font-family: monospace;
+            border: 1px solid #e0e0e0;
+        }
+
+        .method {
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+
+        .method.get { background: #28a745; }
+        .method.post { background: #007bff; }
+        .method.put { background: #ffc107; color: #000; }
+        .method.delete { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <!-- Login Form -->
+    <div class="login-container" id="loginContainer">
+        <div class="logo">
+            <h1>π<span>FITNESS</span></h1>
+            <p>Admin Dashboard</p>
+        </div>
+        
+        <div class="alert" id="alert"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Enter first user's email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter first user's password" required>
+            </div>
+            
+            <button type="submit" class="login-btn" id="loginBtn">
+                Login to Dashboard
+            </button>
+        </form>
+        
+        <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 10px; font-size: 0.9rem; color: #666; text-align: center;">
+            <strong>Admin Access:</strong> Only the first registered user can access the admin dashboard.
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be populated here -->
+        </div>
+
+        <div class="api-info">
+            <h3>Available Admin API Endpoints</h3>
+            
+            <div class="api-endpoint">
+                <span class="method post">POST</span>
+                /api/admin/login - Admin login
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/dashboard/stats - Get dashboard statistics
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/users - Get all users with pagination
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/users/:userId - Get user details
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method put">PUT</span>
+                /api/admin/users/:userId/status - Update user status
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/payments - Get all payments
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method post">POST</span>
+                /api/admin/payments/:paymentId/refund - Process refund
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/memberships - Get all memberships
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/messages - Get contact messages
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/analytics - Get analytics data
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/quick-stats - Get quick stats for dashboard
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                /api/admin/alerts - Get system alerts
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api'; // Update this to match your server port
+        let authToken = null;
+
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    authToken = data.token;
+                    localStorage.setItem('adminToken', authToken);
+                    showAlert(`Welcome ${data.admin.fullName}! Admin access granted.`, 'success');
+                    
+                    setTimeout(() => {
+                        showDashboard(data.admin);
+                    }, 1000);
+                } else {
+                    showAlert(data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Connection error. Please check if the server is running.', 'error');
+            }
+            
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login to Dashboard';
+        });
+
+        // Show dashboard
+        async function showDashboard(adminData = null) {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'block';
+            
+            // Update header with admin info
+            if (adminData) {
+                const header = document.querySelector('.header h1');
+                header.textContent = `Admin Dashboard - ${adminData.fullName}`;
+            }
+            
+            // Load dashboard stats
+            await loadDashboardStats();
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/quick-stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayStats(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Display stats in grid
+        function displayStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <h3>${stats.totalMembers || 0}</h3>
+                    <p>Total Members</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>${stats.activeMembers || 0}</h3>
+                    <p>Active Members</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>₹${(stats.monthlyRevenue || 0).toLocaleString()}</h3>
+                    <p>Monthly Revenue</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>${stats.weeklyClasses || 0}</h3>
+                    <p>Classes This Week</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>${stats.weeklySignups || 0}</h3>
+                    <p>New Signups</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>${stats.pendingPayments || 0}</h3>
+                    <p>Pending Payments</p>
+                </div>
+            `;
+        }
+
+        // Show alert messages
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Logout function
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('adminToken');
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('dashboardContainer').style.display = 'none';
+        }
+
+        // Check for existing token on page load
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('adminToken');
+            if (savedToken) {
+                authToken = savedToken;
+                showDashboard();
+            }
+        });
+    </script>
+</body>
+</html>

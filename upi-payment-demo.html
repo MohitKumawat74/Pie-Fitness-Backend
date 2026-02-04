@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPI Payment - Zenith Frame Gym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .payment-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .amount {
+            text-align: center;
+            font-size: 36px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .upi-id-box {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .upi-id {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .upi-apps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .upi-app-btn {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .upi-app-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .upi-app-btn img {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+
+        .app-name {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #999;
+        }
+
+        .file-input-label:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .file-name {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .required {
+            color: red;
+        }
+
+        @media (max-width: 500px) {
+            .upi-apps {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <h2>Complete Payment</h2>
+        <div class="amount" id="amount">₹0</div>
+
+        <!-- UPI ID Section -->
+        <div class="section">
+            <div class="section-title">Pay to this UPI ID</div>
+            <div class="upi-id-box">
+                <span class="upi-id" id="upiId">zenithgym@paytm</span>
+                <button class="copy-btn" onclick="copyUpiId()">Copy</button>
+            </div>
+        </div>
+
+        <!-- UPI Apps Section -->
+        <div class="section">
+            <div class="section-title">Or pay using</div>
+            <div class="upi-apps">
+                <a href="#" class="upi-app-btn" id="phonepeBtn">
+                    <img src="https://cdn-icons-png.flaticon.com/512/6124/6124998.png" alt="PhonePe">
+                    <div class="app-name">PhonePe</div>
+                </a>
+                <a href="#" class="upi-app-btn" id="gpayBtn">
+                    <img src="https://cdn-icons-png.flaticon.com/512/6124/6124997.png" alt="Google Pay">
+                    <div class="app-name">Google Pay</div>
+                </a>
+                <a href="#" class="upi-app-btn" id="paytmBtn">
+                    <img src="https://cdn-icons-png.flaticon.com/512/6124/6124999.png" alt="Paytm">
+                    <div class="app-name">Paytm</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="divider">
+            <span>After Payment, Submit Details</span>
+        </div>
+
+        <!-- Transaction Form -->
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="transactionId">Transaction ID / UTR <span class="required">*</span></label>
+                <input type="text" id="transactionId" name="transactionId" 
+                       placeholder="Enter transaction ID" required>
+            </div>
+
+            <div class="form-group">
+                <label for="upiIdInput">Your UPI ID (optional)</label>
+                <input type="text" id="upiIdInput" name="upiId" 
+                       placeholder="yourname@paytm">
+            </div>
+
+            <div class="form-group">
+                <label for="appUsed">App Used</label>
+                <select id="appUsed" name="appUsed">
+                    <option value="">Select app</option>
+                    <option value="PhonePe">PhonePe</option>
+                    <option value="GooglePay">Google Pay</option>
+                    <option value="Paytm">Paytm</option>
+                    <option value="BHIM">BHIM</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Payment Screenshot (optional)</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="screenshot" name="screenshot" 
+                           accept="image/*" onchange="updateFileName()">
+                    <label for="screenshot" class="file-input-label">
+                        📷 Click to upload screenshot
+                    </label>
+                </div>
+                <div class="file-name" id="fileName"></div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Submit Payment Details
+            </button>
+        </form>
+
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <script>
+        // Configuration - Replace with your actual API endpoint
+        const API_BASE_URL = 'http://localhost:5000/api/payment';
+        let currentOrderId = null;
+
+        // Initialize payment on page load
+        window.onload = async function() {
+            // In production, you would get these from URL params or previous page
+            const amount = 3500;
+            const customerData = {
+                name: 'Sahil Verma',
+                email: 'sahil@yopmail.com',
+                phone: '+919898989899'
+            };
+
+            await createPaymentOrder(amount, customerData);
+        };
+
+        // Create payment order
+        async function createPaymentOrder(amount, customerData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/upi/create-order`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        customerName: customerData.name,
+                        customerEmail: customerData.email,
+                        customerPhone: customerData.phone,
+                        description: 'Quarterly Membership - Zenith Frame Gym'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentOrderId = result.data.orderId;
+                    setupPaymentPage(result.data);
+                } else {
+                    showMessage('error', result.message);
+                }
+            } catch (error) {
+                console.error('Error creating order:', error);
+                showMessage('error', 'Failed to create payment order');
+            }
+        }
+
+        // Setup payment page with order details
+        function setupPaymentPage(orderData) {
+            const { amount, upiInfo } = orderData;
+
+            // Update amount display
+            document.getElementById('amount').textContent = `₹${amount}`;
+
+            // Update UPI ID
+            document.getElementById('upiId').textContent = upiInfo.upiId;
+
+            // Generate UPI deep links
+            const description = 'Gym Membership';
+            const encodedDescription = encodeURIComponent(description);
+            
+            const phonepeLink = `phonepe://pay?pa=${upiInfo.upiId}&pn=${encodeURIComponent(upiInfo.receiverName)}&am=${amount}&cu=INR&tn=${encodedDescription}`;
+            const gpayLink = `gpay://upi/pay?pa=${upiInfo.upiId}&pn=${encodeURIComponent(upiInfo.receiverName)}&am=${amount}&cu=INR&tn=${encodedDescription}`;
+            const paytmLink = `paytmmp://pay?pa=${upiInfo.upiId}&pn=${encodeURIComponent(upiInfo.receiverName)}&am=${amount}&cu=INR&tn=${encodedDescription}`;
+
+            document.getElementById('phonepeBtn').href = phonepeLink;
+            document.getElementById('gpayBtn').href = gpayLink;
+            document.getElementById('paytmBtn').href = paytmLink;
+        }
+
+        // Copy UPI ID to clipboard
+        function copyUpiId() {
+            const upiId = document.getElementById('upiId').textContent;
+            navigator.clipboard.writeText(upiId).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Update file name display
+        function updateFileName() {
+            const input = document.getElementById('screenshot');
+            const fileName = document.getElementById('fileName');
+            if (input.files.length > 0) {
+                fileName.textContent = `Selected: ${input.files[0].name}`;
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!currentOrderId) {
+                showMessage('error', 'Order ID not found. Please refresh the page.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            const formData = new FormData(e.target);
+            formData.append('orderId', currentOrderId);
+            formData.append('transactionDate', new Date().toISOString());
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/upi/submit`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('success', result.message);
+                    e.target.reset();
+                    document.getElementById('fileName').textContent = '';
+                    
+                    // Start polling for payment status
+                    setTimeout(() => {
+                        pollPaymentStatus();
+                    }, 3000);
+                } else {
+                    showMessage('error', result.message);
+                }
+            } catch (error) {
+                console.error('Error submitting payment:', error);
+                showMessage('error', 'Failed to submit payment details');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Payment Details';
+            }
+        });
+
+        // Poll payment status
+        async function pollPaymentStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/order/${currentOrderId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const payment = result.data;
+                    
+                    if (payment.status === 'paid') {
+                        showMessage('success', '✓ Payment verified! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = '/success.html';
+                        }, 2000);
+                    } else if (payment.status === 'failed') {
+                        const remarks = payment.upiDetails?.remarks || 'Payment verification failed';
+                        showMessage('error', `✗ ${remarks}`);
+                    } else if (payment.status === 'verification_pending') {
+                        showMessage('info', '⏳ Payment is being verified. Please wait...');
+                        // Continue polling
+                        setTimeout(pollPaymentStatus, 10000); // Poll every 10 seconds
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }
+
+        // Show status message
+        function showMessage(type, message) {
+            const msgEl = document.getElementById('statusMessage');
+            msgEl.className = `status-message ${type}`;
+            msgEl.textContent = message;
+            msgEl.style.display = 'block';
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    msgEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
