@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/BookFreeTrialController');
+const controller = require('../controllers/bookFreeTrialController');
 
 router.get('/getform', controller.getAllBookFreeTrials);
 router.put('/:id', controller.updateBookFreeTrial);
