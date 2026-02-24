@@ -259,7 +259,7 @@ async function createUpiOrder(orderData) {
       // Return UPI details for frontend to display
       upiInfo: {
         upiId: process.env.GYM_UPI_ID || 'gym@paytm', // Your gym's UPI ID
-        receiverName: process.env.GYM_NAME || 'Zenith Frame Gym',
+        receiverName: process.env.GYM_NAME || 'Pie Fitness',
       }
     };
   } catch (error) {

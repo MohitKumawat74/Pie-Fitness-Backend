@@ -134,10 +134,11 @@ class AdminAuth {
         return { success: false, message: 'Current password is incorrect' };
       }
 
-      // Update password
+      // Update password (validateModifiedOnly so stale enum values on other
+      // fields like membershipPlan don't cause a spurious validation error)
       firstUser.password = newPassword;
       firstUser._confirmPassword = newPassword;
-      await firstUser.save();
+      await firstUser.save({ validateModifiedOnly: true });
 
       return { success: true, message: 'Password changed successfully' };
     } catch (error) {

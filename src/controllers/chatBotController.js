@@ -145,7 +145,7 @@ class ChatBot {
         sender: {
           id: botMessage.sender._id.toString(),
           fullName: 'PieFitness AI',
-          email: 'ai@zenithframe.com',
+          email: 'ai@piefitness.com',
         },
         botResponse: botMessage.botResponse,
         createdAt: botMessage.createdAt.toISOString(),

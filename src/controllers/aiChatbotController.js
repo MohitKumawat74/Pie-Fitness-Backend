@@ -392,7 +392,7 @@ class AIChatbotController {
 
       return res.status(200).json({
         success: true,
-        suggestions: suggestions.slice(0, 25), // Limit to 25 suggestions
+        suggestions: suggestions.slice(0, 5), // Limit to 5 suggestions
       });
     } catch (error) {
       console.error('Error in getSuggestions:', error);
@@ -542,20 +542,25 @@ Respond warmly but redirect to fitness:
 
 Keep it friendly and motivational, focusing on how fitness can improve their life.`;
     } else {
-      // Fitness-related question - normal comprehensive response
-      systemPrompt = `You are PIE Fitness Assistant, a highly knowledgeable and motivational AI fitness coach. You specialize in workouts, nutrition, bodybuilding, health, supplements, and fitness motivation.
+      // Fitness-related question - concise, high-quality response
+      systemPrompt = `You are PIE Fitness Assistant, a knowledgeable and motivational AI fitness coach specializing in workouts, nutrition, bodybuilding, health, and supplements.
 
-Key guidelines:
-- Always finish your sentences completely. Never leave thoughts incomplete.
-- Reply in the same language as the user's message (Hindi, Urdu, English, etc.)
-- For greetings: Be enthusiastic about fitness, introduce yourself as PIE Fitness Assistant
-- For fitness questions: Provide comprehensive, expert advice with practical tips
-- Be motivational and encouraging - remind users of the benefits of fitness
-- Include specific actionable advice (sets, reps, timing, techniques)
-- Relate everything back to achieving their fitness transformation
-- If uncertain about medical issues, recommend consulting healthcare professionals
+RESPONSE LENGTH RULES (strictly follow):
+- Greetings / simple hi: 1-2 sentences max.
+- Short or casual messages: 2-3 sentences.
+- Specific fitness questions: 3-6 sentences OR a short focused list (3-5 bullet points max). Never exceed 150 words.
+- Requests for detailed explanations ("explain in detail", "give me a full plan"): up to 200-250 words with clear structure.
+- NEVER write 10+ bullet points or numbered lists unless the user explicitly asks for a full structured plan.
 
-Your personality: Enthusiastic, knowledgeable, motivational, like a personal trainer who genuinely cares about results.`;
+Quality rules:
+- Always complete your sentences. Never leave a thought unfinished.
+- Reply in the same language as the user (Hindi, Urdu, English, etc.).
+- Give practical, specific, actionable advice (sets, reps, macros, timing).
+- Be direct — give the answer first, then a brief explanation if needed.
+- Skip filler intros like "Great question!" or long preambles.
+- If uncertain about medical issues, recommend consulting a healthcare professional.
+
+Tone: Friendly, confident, direct — like a knowledgeable personal trainer giving a quick sharp answer.`;
     }
 
     systemPrompt += `
@@ -606,11 +611,13 @@ Current user context:
       maxTokens = 180;
       desiredMaxChars = 250;
     } else if (isQuestion || words > 10) {
-      maxTokens = Math.min(2000, Math.max(500, words * 25)); // generous for real questions
-      desiredMaxChars = Math.min(4000, maxTokens * 4);
+      // ChatGPT-calibrated: concise but complete. Scale slightly with question length.
+      const questionComplexity = Math.min(words, 30);
+      maxTokens = Math.min(400, Math.max(180, questionComplexity * 10));
+      desiredMaxChars = maxTokens * 4;
     } else {
-      maxTokens = Math.min(1200, Math.max(300, chars * 3));
-      desiredMaxChars = Math.min(2000, maxTokens * 4);
+      maxTokens = Math.min(350, Math.max(150, chars * 2));
+      desiredMaxChars = maxTokens * 4;
     }
 
     try {
@@ -756,7 +763,7 @@ Current user context:
           confidence: aiPowered ? 0.95 : analysis.confidence,
           intent: fitnessAnalysis.isOffTopic ? 'off_topic' : analysis.intent,
           entities: analysis.entities,
-          suggestedActions: suggestions.slice(0, 20),
+          suggestedActions: suggestions.slice(0, 5),
           aiPowered,
           model: aiPowered ? (activeAI?.type === 'groq' ? (process.env.GROQ_MODEL || 'llama-3.1-8b-instant') : (process.env.OPENAI_MODEL || 'gpt-3.5-turbo')) : 'rule-based',
           fitnessRelevance: fitnessAnalysis,
@@ -765,7 +772,7 @@ Current user context:
           currentTopic: fitnessAnalysis.isOffTopic ? 'off_topic' : analysis.intent,
           previousTopics: [...(conversation.context.previousTopics || []), analysis.intent].slice(-5),
           conversationStage: AIChatbotController.determineConversationStage(conversation, analysis),
-          lastBotSuggestions: suggestions.slice(0, 20),
+          lastBotSuggestions: suggestions.slice(0, 5),
           consecutiveOffTopicCount: fitnessAnalysis.consecutiveOffTopicCount,
           fitnessRelatedCount: (conversation.context.fitnessRelatedCount || 0) + (fitnessAnalysis.isFitnessRelated ? 1 : 0),
         },
