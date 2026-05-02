@@ -411,6 +411,103 @@ class UsersController {
       });
     }
   }
+
+  // Create user
+  static async createUser(req, res) {
+    try {
+      const { 
+        fullName, 
+        email, 
+        username, 
+        password, 
+        confirmPassword,
+        phone,
+        dateOfBirth,
+        membershipPlan,
+        isActive = true
+      } = req.body;
+
+      // Validate required fields
+      if (!fullName || !email || !password || !confirmPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Full name, email, password, and confirm password are required'
+        });
+      }
+
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Passwords do not match'
+        });
+      }
+
+      // Check if email already exists
+      const existingEmail = await RegisterUser.findOne({ email: email.toLowerCase() });
+      if (existingEmail) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already in use'
+        });
+      }
+
+      // Check if username already exists (if provided)
+      if (username) {
+        const existingUsername = await RegisterUser.findOne({ username });
+        if (existingUsername) {
+          return res.status(409).json({
+            success: false,
+            message: 'Username already in use'
+          });
+        }
+      }
+
+      // Create new user
+      const newUser = new RegisterUser({
+        fullName,
+        email: email.toLowerCase(),
+        username,
+        password,
+        confirmPassword,
+        phone: phone || '',
+        dateOfBirth: dateOfBirth || null,
+        membershipPlan: membershipPlan || null,
+        isActive
+      });
+
+      // Save user (pre-save hook will hash the password)
+      await newUser.save();
+
+      // Return user without password
+      const userResponse = newUser.toObject();
+      delete userResponse.password;
+
+      res.status(201).json({
+        success: true,
+        message: 'User created successfully',
+        data: userResponse
+      });
+
+    } catch (error) {
+      console.error('Create user error:', error);
+      
+      // Handle validation errors
+      if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({
+          success: false,
+          message: 'Validation error',
+          errors: messages
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create user'
+      });
+    }
+  }
 }
 
 module.exports = UsersController;

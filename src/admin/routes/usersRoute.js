@@ -3,6 +3,12 @@ const router = express.Router();
 const { logAdminActivity } = require('../middleware/adminMiddleware');
 const UsersController = require('../controllers/usersController');
 
+// Create user
+router.post('/',
+  logAdminActivity('create', 'user'),
+  UsersController.createUser
+);
+
 // Get all users
 router.get('/',
   logAdminActivity('view', 'users'),

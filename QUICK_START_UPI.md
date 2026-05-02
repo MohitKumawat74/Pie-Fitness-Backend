@@ -94,7 +94,7 @@ Edit `.env` file to set your UPI details:
 ```env
 # Replace with your actual UPI ID and gym name
 GYM_UPI_ID=zenithgym@paytm
-GYM_NAME=Zenith Frame Gym
+GYM_NAME=Pie Fitness
 ```
 
 ## 📱 API Endpoints

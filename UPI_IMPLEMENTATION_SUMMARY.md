@@ -54,7 +54,7 @@
 - Added UPI configuration:
   ```
   GYM_UPI_ID=zenithgym@paytm
-  GYM_NAME=Zenith Frame Gym
+  GYM_NAME=Pie Fitness
   ```
 
 ### 7. **Documentation**
@@ -148,9 +148,9 @@
 ## 📱 UPI Deep Link Format
 
 ```javascript
-phonepe://pay?pa=zenithgym@paytm&pn=Zenith Frame Gym&am=3500&cu=INR&tn=Gym Membership
-gpay://upi/pay?pa=zenithgym@paytm&pn=Zenith Frame Gym&am=3500&cu=INR&tn=Gym Membership
-paytmmp://pay?pa=zenithgym@paytm&pn=Zenith Frame Gym&am=3500&cu=INR&tn=Gym Membership
+phonepe://pay?pa=zenithgym@paytm&pn=Pie Fitness&am=3500&cu=INR&tn=Gym Membership
+gpay://upi/pay?pa=zenithgym@paytm&pn=Pie Fitness&am=3500&cu=INR&tn=Gym Membership
+paytmmp://pay?pa=zenithgym@paytm&pn=Pie Fitness&am=3500&cu=INR&tn=Gym Membership
 ```
 
 ## 🗂️ Directory Structure
@@ -236,7 +236,7 @@ src/
 Update your UPI details in `.env`:
 ```env
 GYM_UPI_ID=zenithgym@paytm    # Your UPI ID
-GYM_NAME=Zenith Frame Gym      # Your business name
+GYM_NAME=Pie Fitness      # Your business name
 ```
 
 ## 📞 Support
