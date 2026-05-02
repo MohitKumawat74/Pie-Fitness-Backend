@@ -19,7 +19,7 @@ const classSchema = new mongoose.Schema({
   },
   instructorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Trainer',
+    ref: 'AdminTrainer',
     default: null
   },
   duration: {
@@ -30,7 +30,14 @@ const classSchema = new mongoose.Schema({
   },
   capacity: {
     type: Number,
-    required: [true, 'Class capacity is required'],
+    // Make capacity required only when maxCapacity isn't provided
+    required: [function() { return !(this && this.maxCapacity !== undefined && this.maxCapacity !== null); }, 'Class capacity is required'],
+    min: [1, 'Class capacity must be at least 1'],
+    max: [100, 'Class capacity cannot exceed 100']
+  },
+  // Support clients sending `maxCapacity` instead of `capacity`
+  maxCapacity: {
+    type: Number,
     min: [1, 'Class capacity must be at least 1'],
     max: [100, 'Class capacity cannot exceed 100']
   },
@@ -68,13 +75,29 @@ const classSchema = new mongoose.Schema({
   }],
   category: {
     type: String,
-    enum: ['Cardio', 'Strength', 'Yoga', 'Pilates', 'HIIT', 'Dance', 'Martial Arts', 'Swimming', 'Other'],
-    required: true
+    enum: ['Cardio', 'Strength', 'Yoga', 'Pilates', 'HIIT', 'Dance', 'Martial Arts', 'Swimming', 'CrossFit', 'Other'],
+    required: true,
+    set: function(v) {
+      if (typeof v !== 'string') return v;
+      const key = v.trim().toLowerCase();
+      const mapping = {
+        'crossfit': 'CrossFit',
+        'cross-fit': 'CrossFit',
+        'cross fit': 'CrossFit'
+      };
+      if (mapping[key]) return mapping[key];
+      return v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+    }
   },
   difficulty: {
     type: String,
     enum: ['Beginner', 'Intermediate', 'Advanced'],
-    required: true
+    required: true,
+    set: function(v) {
+      if (typeof v !== 'string') return v;
+      // Normalize common lowercase inputs (e.g., 'intermediate') to Title Case
+      return v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+    }
   },
   equipment: [{
     type: String,
@@ -124,12 +147,25 @@ const classSchema = new mongoose.Schema({
 
 // Virtual for availability
 classSchema.virtual('availability').get(function() {
-  return this.capacity - this.currentEnrollment;
+  const cap = (this.capacity !== undefined && this.capacity !== null) ? this.capacity : this.maxCapacity;
+  return (cap || 0) - (this.currentEnrollment || 0);
 });
 
 // Virtual for is full
 classSchema.virtual('isFull').get(function() {
-  return this.currentEnrollment >= this.capacity;
+  const cap = (this.capacity !== undefined && this.capacity !== null) ? this.capacity : this.maxCapacity;
+  return (this.currentEnrollment || 0) >= (cap || 0);
+});
+
+// Ensure capacity and maxCapacity are synchronized before validation
+classSchema.pre('validate', function(next) {
+  if ((this.capacity === undefined || this.capacity === null) && (this.maxCapacity !== undefined && this.maxCapacity !== null)) {
+    this.capacity = this.maxCapacity;
+  }
+  if ((this.maxCapacity === undefined || this.maxCapacity === null) && (this.capacity !== undefined && this.capacity !== null)) {
+    this.maxCapacity = this.capacity;
+  }
+  next();
 });
 
 // Static methods for admin operations

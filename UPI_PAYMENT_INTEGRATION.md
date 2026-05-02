@@ -16,7 +16,7 @@ This document explains how to integrate the manual UPI payment system where user
   "customerName": "Sahil Verma",
   "customerEmail": "sahil@yopmail.com",
   "customerPhone": "+919898989899",
-  "description": "Quarterly Membership - Zenith Frame Gym",
+  "description": "Quarterly Membership - Pie Fitness",
   "notes": {
     "planType": "quarterly",
     "planName": "Quarterly"
@@ -35,10 +35,10 @@ This document explains how to integrate the manual UPI payment system where user
     "currency": "INR",
     "customerEmail": "sahil@yopmail.com",
     "customerName": "Sahil Verma",
-    "description": "Quarterly Membership - Zenith Frame Gym",
+    "description": "Quarterly Membership - Pie Fitness",
     "upiInfo": {
       "upiId": "zenithgym@paytm",
-      "receiverName": "Zenith Frame Gym"
+      "receiverName": "Pie Fitness"
     }
   }
 }
@@ -62,7 +62,7 @@ const googlePayLink = `gpay://upi/pay?pa=${upiId}&pn=${receiverName}&am=${amount
 const paytmLink = `paytmmp://pay?pa=${upiId}&pn=${receiverName}&am=${amount}&cu=INR&tn=${description}`;
 
 // Example:
-// phonepe://pay?pa=zenithgym@paytm&pn=Zenith Frame Gym&am=3500&cu=INR&tn=Quarterly Membership
+// phonepe://pay?pa=zenithgym@paytm&pn=Pie Fitness&am=3500&cu=INR&tn=Quarterly Membership
 ```
 
 ### 3. **Submit Payment Details**
@@ -393,7 +393,7 @@ Add these environment variables to your `.env` file:
 ```env
 # UPI Payment Configuration
 GYM_UPI_ID=zenithgym@paytm
-GYM_NAME=Zenith Frame Gym
+GYM_NAME=Pie Fitness
 ```
 
 ## Payment States
