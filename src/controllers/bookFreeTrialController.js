@@ -1,5 +1,29 @@
 const BookFreeTrial = require('../models/BookFreeTrial');
 const bookFreeTrialService = require('../services/bookFreeTrialService');
+const { createAdminNotification } = require('../services/notificationService');
+
+function formatBookFreeTrial(doc, { includePreferredFields = false } = {}) {
+    const booking = typeof doc?.toObject === 'function' ? doc.toObject() : doc;
+    if (!booking) return booking;
+
+    const response = {
+        id: booking._id ? booking._id.toString() : undefined,
+        first_name: booking.first_name,
+        last_name: booking.last_name,
+        email: booking.email,
+        phone: booking.phone,
+        notes: booking.notes,
+        createdAt: booking.createdAt
+    };
+
+    if (includePreferredFields) {
+        response.preferred_class_type = booking.preferred_class_type;
+        response.preferred_class_date = booking.preferred_class_date;
+        response.preferred_class_time = booking.preferred_class_time;
+    }
+
+    return response;
+}
 
 // Helper to send consistent JSON responses
 function sendSuccess(res, status, message, data) {
@@ -18,10 +42,26 @@ function sendError(res, status, message, err) {
 exports.getAllBookFreeTrials = async (req, res) => {
     try {
         const bookFreeTrials = await bookFreeTrialService.getAllBookFreeTrials();
-        return sendSuccess(res, 200, 'Book free trials fetched', bookFreeTrials);
+        return sendSuccess(res, 200, 'Book free trials fetched', bookFreeTrials.map((booking) => formatBookFreeTrial(booking, { includePreferredFields: true })));
     } catch (error) {
         console.error('getAllBookFreeTrials error:', error);
         return sendError(res, 500, 'Error fetching book free trials', error);
+    }
+};
+
+exports.getBookFreeTrialById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) return sendError(res, 400, 'Missing booking id');
+
+        const booking = await BookFreeTrial.findById(id).lean();
+        if (!booking) return sendError(res, 404, 'Booking not found');
+
+        return sendSuccess(res, 200, 'Book free trial fetched successfully', formatBookFreeTrial(booking));
+    } catch (error) {
+        console.error('getBookFreeTrialById error:', error);
+        const status = error.statusCode || (error.name === 'CastError' ? 400 : 500);
+        return sendError(res, status, 'Error fetching book free trial', error);
     }
 };
 
@@ -33,7 +73,22 @@ exports.bookFreeTrial = async (req, res) => {
         }
 
         const newBooking = await bookFreeTrialService.bookFreeTrial(req.body);
-        return sendSuccess(res, 201, 'Free trial booked successfully', newBooking);
+        await createAdminNotification({
+            title: 'New free trial request',
+            message: `${newBooking.first_name} ${newBooking.last_name} booked a free trial`,
+            type: 'general',
+            link: '/admin/book-free-trial',
+            metadata: {
+                bookingId: newBooking._id.toString(),
+                email: newBooking.email,
+                phone: newBooking.phone,
+                preferred_class_type: newBooking.preferred_class_type,
+                preferred_class_date: newBooking.preferred_class_date,
+                preferred_class_time: newBooking.preferred_class_time
+            },
+            createdBy: null
+        });
+        return sendSuccess(res, 201, 'Free trial booked successfully', formatBookFreeTrial(newBooking));
     } catch (error) {
         console.error('bookFreeTrial error:', error);
         // Map known error shapes to status codes if service throws them (e.g., error.code)

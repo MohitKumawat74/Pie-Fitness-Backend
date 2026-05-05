@@ -3,7 +3,25 @@ const router = express.Router();
 const { logAdminActivity } = require('../middleware/adminMiddleware');
 const MembershipsController = require('../controllers/membershipsController');
 
-// Get all memberships
+// Create user subscription (assign plan to user) - MUST BE BEFORE generic POST route
+router.post('/user-subscriptions/create',
+  logAdminActivity('create', 'user_subscription'),
+  MembershipsController.createUserSubscription
+);
+
+// Get all user subscriptions (can also use ?type=subscriptions on main GET)
+router.get('/user-subscriptions/all',
+  logAdminActivity('view', 'user_subscriptions'),
+  MembershipsController.getAllUserSubscriptions
+);
+
+// Get user subscription by ID
+router.get('/user-subscriptions/:subscriptionId',
+  logAdminActivity('view', 'user_subscription_details'),
+  MembershipsController.getUserSubscriptionById
+);
+
+// Get all memberships (or subscriptions if ?type=subscriptions)
 router.get('/',
   logAdminActivity('view', 'memberships'),
   MembershipsController.getAllMemberships
@@ -21,7 +39,7 @@ router.get('/:id',
   MembershipsController.getMembershipById
 );
 
-// Create new membership
+// Create new membership (plan) OR user subscription
 router.post('/',
   logAdminActivity('create', 'membership'),
   MembershipsController.createMembership

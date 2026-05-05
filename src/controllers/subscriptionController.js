@@ -1,4 +1,7 @@
+const mongoose = require('mongoose');
 const Subscription = require('../models/Subscription');
+const RegisterUser = require('../models/RegisterUser');
+const { createAdminNotification } = require('../services/notificationService');
 
 // Helper: add months to a date while preserving day where possible
 function addMonths(date, months) {
@@ -32,12 +35,53 @@ function monthsForPlan(planName) {
 // Create a new subscription    
 exports.createSubscription = async (req, res) => {
     try {
-        const { plan, startDate, endDate, price } = req.body;
-        if (!plan || !startDate) {
-            return res.status(400).json({ message: 'plan and startDate are required' });
+        const {
+            plan,
+            planName,
+            planType,
+            startDate,
+            endDate,
+            price,
+            amount,
+            memberId,
+            memberName,
+            memberEmail,
+            customerName,
+            customerEmail,
+            email,
+            userId,
+            paymentMethod,
+            paymentStatus,
+            lastPaymentDate
+        } = req.body;
+
+        const resolvedPlanName = planName || plan;
+        if (!resolvedPlanName || !startDate) {
+            return res.status(400).json({ message: 'plan (or planName) and startDate are required' });
         }
+
+        const planTypeInput = String(planType || resolvedPlanName || 'monthly').toLowerCase().trim();
+        const planTypeMap = {
+            monthly: 'monthly',
+            quarterly: 'quarterly',
+            halfyearly: 'halfYearly',
+            'half-yearly': 'halfYearly',
+            yearly: 'yearly',
+            annually: 'yearly',
+            annual: 'yearly'
+        };
+        const normalizedPlanType = planTypeMap[planTypeInput] || 'monthly';
+        const normalizedPlanName = resolvedPlanName
+            ? String(resolvedPlanName).trim()
+            : normalizedPlanType.charAt(0).toUpperCase() + normalizedPlanType.slice(1);
+
+        const resolvedMemberEmail = (memberEmail || customerEmail || email || '').toString().trim();
+        const resolvedMemberName = (memberName || customerName || '').toString().trim();
+        const resolvedAmount = Number(amount ?? price ?? 0);
+        const resolvedPrice = Number(price ?? resolvedAmount ?? 0);
+
         // Compute endDate from plan duration (override any provided endDate)
-        const months = monthsForPlan(plan);
+        const months = monthsForPlan(normalizedPlanName || normalizedPlanType);
         let computedEndDate = null;
         if (months > 0) {
             computedEndDate = addMonths(startDate, months);
@@ -45,15 +89,64 @@ exports.createSubscription = async (req, res) => {
             computedEndDate = new Date(endDate);
         }
 
+        let resolvedMemberId = memberId || userId || '';
+        let linkedUser = null;
+        if (!resolvedMemberId && resolvedMemberEmail) {
+            linkedUser = await RegisterUser.findOne({ email: resolvedMemberEmail.toLowerCase() });
+            if (linkedUser) resolvedMemberId = linkedUser._id.toString();
+        }
+
+        const finalMemberId = String(resolvedMemberId || resolvedMemberEmail || 'guest');
+        const finalMemberName = String(resolvedMemberName || (linkedUser && linkedUser.fullName) || 'Member');
+        const finalMemberEmail = String(resolvedMemberEmail || (linkedUser && linkedUser.email) || 'unknown@example.com');
+
+        const paymentMethodOptions = ['Credit Card', 'Debit Card', 'UPI', 'Bank Transfer', 'Cash'];
+        let normalizedPaymentMethod = paymentMethod ? String(paymentMethod).trim() : '';
+        if (normalizedPaymentMethod) {
+            const match = paymentMethodOptions.find(
+                value => value.toLowerCase() === normalizedPaymentMethod.toLowerCase()
+            );
+            normalizedPaymentMethod = match || '';
+        }
+        if (!normalizedPaymentMethod) normalizedPaymentMethod = 'Credit Card';
+
         const newSubscription = new Subscription({
-            planName: plan,
+            memberId: finalMemberId,
+            memberName: finalMemberName,
+            memberEmail: finalMemberEmail,
+            planName: normalizedPlanName,
+            planType: normalizedPlanType,
             startDate,
             endDate: computedEndDate,
-            price: price || 0,
+            nextBillingDate: computedEndDate,
+            amount: resolvedAmount,
+            price: resolvedPrice,
+            paymentMethod: normalizedPaymentMethod,
+            paymentStatus: paymentStatus || 'paid',
+            lastPaymentDate: lastPaymentDate ? new Date(lastPaymentDate) : null,
             status: 'active'
         });
+
         await newSubscription.save();
-        const payload = {
+
+        await createAdminNotification({
+            title: 'New plan purchased',
+            message: `${finalMemberName} purchased ${newSubscription.planName} plan`,
+            type: 'payment',
+            link: `/admin/subscriptions/${newSubscription._id}`,
+            metadata: {
+                subscriptionId: newSubscription._id.toString(),
+                memberId: finalMemberId,
+                memberEmail: finalMemberEmail,
+                planName: newSubscription.planName,
+                amount: newSubscription.amount,
+                status: newSubscription.status
+            },
+            createdBy: linkedUser?._id || null
+        });
+
+        // Link subscription to user profile for consistent API responses
+        const subscriptionSnapshot = {
             id: newSubscription._id.toString(),
             planName: newSubscription.planName,
             startDate: newSubscription.startDate,
@@ -61,7 +154,42 @@ exports.createSubscription = async (req, res) => {
             price: newSubscription.price || 0,
             status: newSubscription.status || 'active'
         };
-        return res.status(201).json({ message: 'Subscription created successfully', subscription: payload });
+
+        const planForUser = {
+            monthly: 'monthly',
+            quarterly: 'quarterly',
+            halfYearly: 'halfYearly',
+            yearly: 'annually'
+        }[normalizedPlanType] || 'monthly';
+
+        const orQuery = [];
+        if (finalMemberId && mongoose.Types.ObjectId.isValid(finalMemberId)) {
+            orQuery.push({ _id: new mongoose.Types.ObjectId(finalMemberId) });
+        }
+        if (finalMemberEmail) {
+            orQuery.push({ email: finalMemberEmail.toLowerCase() });
+        }
+
+        if (orQuery.length > 0) {
+            linkedUser = await RegisterUser.findOneAndUpdate(
+                { $or: orQuery },
+                { subscription: subscriptionSnapshot, membershipPlan: planForUser },
+                { new: true }
+            ).select('_id email membershipPlan subscription');
+        }
+
+        const payload = {
+            id: newSubscription._id.toString(),
+            planName: newSubscription.planName,
+            planType: newSubscription.planType,
+            startDate: newSubscription.startDate,
+            endDate: newSubscription.endDate,
+            price: newSubscription.price || 0,
+            amount: newSubscription.amount || 0,
+            status: newSubscription.status || 'active'
+        };
+
+        return res.status(201).json({ message: 'Subscription created successfully', subscription: payload, linkedUser });
     } catch (error) {
         console.error('Error creating subscription:', error);
         return res.status(500).json({ message: 'Internal server error' });

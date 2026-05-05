@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/userFormController');
 
+router.get('/getform', controller.getFormLookup);
+router.put('/getform', controller.updateFormLookup);
 router.get('/:id', controller.getForm);
 
 // PATCH /:id   -> partial update of a form (save step)

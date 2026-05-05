@@ -1,5 +1,31 @@
 const mongoose = require('mongoose');
 
+const normalizeStatus = (status) => {
+  if (!status) return status;
+
+  const normalized = String(status).trim().toLowerCase();
+  const statusMap = {
+    active: 'Active',
+    inactive: 'Inactive',
+    'on leave': 'On Leave',
+    terminated: 'Terminated'
+  };
+
+  return statusMap[normalized] || status;
+};
+
+const generateEmployeeId = (fullName) => {
+  const namePart = String(fullName || 'TRN')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .slice(0, 3)
+    .toUpperCase() || 'TRN';
+
+  const timestampPart = Date.now().toString().slice(-6);
+  const randomPart = Math.floor(Math.random() * 900 + 100).toString();
+
+  return `${namePart}${timestampPart}${randomPart}`;
+};
+
 // Define schema for gym trainers
 const trainerSchema = new mongoose.Schema({
   fullName: {
@@ -34,17 +60,19 @@ const trainerSchema = new mongoose.Schema({
   employeeId: {
     type: String,
     unique: true,
-    required: [true, 'Employee ID is required'],
+    default: function() {
+      return generateEmployeeId(this.fullName);
+    },
     trim: true
   },
   dateOfBirth: {
     type: Date,
-    required: [true, 'Date of birth is required']
+    default: null
   },
   gender: {
     type: String,
     enum: ['Male', 'Female', 'Other'],
-    required: [true, 'Gender is required']
+    default: null
   },
   address: {
     street: {
@@ -75,23 +103,24 @@ const trainerSchema = new mongoose.Schema({
   },
   specializations: [{
     type: String,
-    enum: ['Cardio', 'Strength Training', 'Yoga', 'Pilates', 'HIIT', 'Dance', 'Martial Arts', 'Swimming', 'Nutrition', 'Rehabilitation', 'Personal Training'],
-    required: true
+    trim: true
+  }],
+  specialties: [{
+    type: String,
+    trim: true
   }],
   certifications: [{
     name: {
       type: String,
-      required: true,
       trim: true
     },
     issuedBy: {
       type: String,
-      required: true,
       trim: true
     },
     issuedDate: {
       type: Date,
-      required: true
+      default: null
     },
     expiryDate: {
       type: Date
@@ -106,10 +135,30 @@ const trainerSchema = new mongoose.Schema({
     required: [true, 'Experience is required'],
     min: [0, 'Experience cannot be negative']
   },
+  hourlyRate: {
+    type: Number,
+    default: 0,
+    min: [0, 'Hourly rate cannot be negative']
+  },
+  bio: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  certification: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  totalClasses: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   salary: {
     amount: {
       type: Number,
-      required: [true, 'Salary amount is required'],
+      default: 0,
       min: [0, 'Salary cannot be negative']
     },
     currency: {
@@ -166,7 +215,8 @@ const trainerSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['Active', 'Inactive', 'On Leave', 'Terminated'],
-    default: 'Active'
+    default: 'Active',
+    set: normalizeStatus
   },
   joinDate: {
     type: Date,
@@ -225,6 +275,46 @@ trainerSchema.virtual('age').get(function() {
   return null;
 });
 
+trainerSchema.statics.normalizeTrainerData = function(trainerData = {}, options = {}) {
+  const normalizedData = { ...trainerData };
+  const { preserveEmployeeId = false } = options;
+
+  if (Array.isArray(normalizedData.specialties) && !normalizedData.specializations) {
+    normalizedData.specializations = normalizedData.specialties;
+  }
+
+  if (normalizedData.bio && !normalizedData.notes) {
+    normalizedData.notes = normalizedData.bio;
+  }
+
+  if (normalizedData.hourlyRate != null) {
+    const rate = Number(normalizedData.hourlyRate);
+    if (!Number.isNaN(rate)) {
+      normalizedData.hourlyRate = rate;
+      normalizedData.salary = {
+        ...(normalizedData.salary || {}),
+        amount: normalizedData.salary && normalizedData.salary.amount != null
+          ? Number(normalizedData.salary.amount)
+          : rate
+      };
+    }
+  }
+
+  if (normalizedData.status) {
+    normalizedData.status = normalizeStatus(normalizedData.status);
+  }
+
+  if (!preserveEmployeeId && !normalizedData.employeeId) {
+    normalizedData.employeeId = generateEmployeeId(normalizedData.fullName);
+  }
+
+  if (normalizedData.dateOfBirth === '') {
+    normalizedData.dateOfBirth = null;
+  }
+
+  return normalizedData;
+};
+
 // Static methods for admin operations
 trainerSchema.statics.getAllTrainers = async function(filters = {}) {
   try {
@@ -259,7 +349,8 @@ trainerSchema.statics.getTrainerById = async function(trainerId) {
 
 trainerSchema.statics.createTrainer = async function(trainerData) {
   try {
-    const newTrainer = new this(trainerData);
+    const normalizedData = this.normalizeTrainerData(trainerData);
+    const newTrainer = new this(normalizedData);
     return await newTrainer.save();
   } catch (error) {
     throw new Error('Failed to create trainer: ' + error.message);

@@ -174,11 +174,25 @@ membershipSchema.statics.createMembership = async function(membershipData) {
 
 membershipSchema.statics.updateMembership = async function(membershipId, updateData) {
   try {
-    return await this.findByIdAndUpdate(
-      membershipId, 
-      updateData, 
-      { new: true, runValidators: true }
-    );
+    const membership = await this.findById(membershipId);
+    if (!membership) return null;
+
+    const nestedFields = ['price', 'limits', 'color', 'validityPeriod'];
+
+    Object.keys(updateData || {}).forEach((key) => {
+      const nextValue = updateData[key];
+
+      if (nestedFields.includes(key) && nextValue && typeof nextValue === 'object' && !Array.isArray(nextValue)) {
+        membership[key] = {
+          ...(membership[key]?.toObject ? membership[key].toObject() : membership[key] || {}),
+          ...nextValue
+        };
+      } else {
+        membership[key] = nextValue;
+      }
+    });
+
+    return await membership.save();
   } catch (error) {
     throw new Error('Failed to update membership: ' + error.message);
   }

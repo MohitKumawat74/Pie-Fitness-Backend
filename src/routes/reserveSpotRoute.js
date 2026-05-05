@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/reserveSpotController');
 
+router.get('/', controller.getAllReserveSpots);
 router.get('/getform', controller.getAllReserveSpots);
+router.get('/:id', controller.getReserveSpotById);
 router.put('/:id', controller.updateReserveSpot);
 router.delete('/:id', controller.deleteReserveSpot);
 router.post('/submit', controller.reserveSpot);

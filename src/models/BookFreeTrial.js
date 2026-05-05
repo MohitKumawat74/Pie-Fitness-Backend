@@ -14,8 +14,15 @@ const bookFreeTrialSchema = new mongoose.Schema({
         required: true
     },
     phone: {
-        type: Number,
-        required: true
+        type: String,
+        required: true,
+        trim: true,
+        validate: {
+            validator: function(v) {
+                return typeof v === 'string' && v.length > 0;
+            },
+            message: 'Phone number is required'
+        }
     },
     preferred_class_type: {
         type: String,
