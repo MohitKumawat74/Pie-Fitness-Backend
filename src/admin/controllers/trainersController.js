@@ -7,7 +7,9 @@ class TrainersController {
       const { status, specialization, search } = req.query;
       
       const filters = {};
-      if (status) filters.status = status;
+      if (status) {
+        filters.status = AdminTrainer.normalizeTrainerData({ status }).status;
+      }
       if (specialization) filters.specialization = specialization;
       if (search) filters.search = search;
 
@@ -58,7 +60,7 @@ class TrainersController {
   // Create new trainer
   static async createTrainer(req, res) {
     try {
-      const trainerData = req.body;
+      const trainerData = AdminTrainer.normalizeTrainerData(req.body);
 
       const newTrainer = await AdminTrainer.createTrainer(trainerData);
 
@@ -81,7 +83,7 @@ class TrainersController {
   static async updateTrainer(req, res) {
     try {
       const { trainerId } = req.params;
-      const updateData = req.body;
+      const updateData = AdminTrainer.normalizeTrainerData(req.body, { preserveEmployeeId: true });
 
       const updatedTrainer = await AdminTrainer.updateTrainer(trainerId, updateData);
 

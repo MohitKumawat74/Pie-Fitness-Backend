@@ -2,6 +2,7 @@ const RegisterUser = require('../models/RegisterUser');
 const mongoose = require('mongoose');
 const { deleteImageFile } = require('../middleware/uploadMiddleware');
 const crypto = require('crypto');
+const { createAdminNotification } = require('../services/notificationService');
 
 // Generate a secure random token
 function generateResetToken() {
@@ -152,6 +153,19 @@ exports.createUser = async (req, res) => {
     });
     newUser.confirmPassword = confirmPassword;
     await newUser.save();
+
+    await createAdminNotification({
+      title: 'New user registered',
+      message: `${newUser.fullName} just registered with ${newUser.email}`,
+      type: 'user',
+      link: `/admin/users/${newUser._id}`,
+      metadata: {
+        userId: newUser._id.toString(),
+        email: newUser.email,
+        fullName: newUser.fullName
+      },
+      createdBy: newUser._id
+    });
 
   const baseUrl2 = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
     res.status(201).json({

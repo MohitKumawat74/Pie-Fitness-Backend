@@ -1,4 +1,5 @@
 const UserForm = require('../models/UserForm');
+const { createAdminNotification } = require('../services/notificationService');
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
@@ -62,6 +63,22 @@ function validatePayment(p, errors) {
   if (p.cardLast4 && !/^\d{4}$/.test(p.cardLast4)) errors.push({ field: 'payment.cardLast4', message: 'cardLast4 must be 4 digits' });
 }
 
+function normalizeAdminStatus(value) {
+  if (value === undefined || value === null || value === '') return undefined;
+
+  const normalized = String(value).trim().toLowerCase().replace(/\s+/g, '-');
+  const map = {
+    pending: 'pending',
+    'in-progress': 'in-progress',
+    inprogress: 'in-progress',
+    approved: 'approved',
+    rejected: 'rejected',
+    completed: 'completed'
+  };
+
+  return map[normalized] || normalized;
+}
+
 // (createForm removed) API surface exposes only submitForm, getForm, updateForm
 
 // Get a form by id
@@ -73,6 +90,93 @@ exports.getForm = async (req, res) => {
     return res.json(form);
   } catch (err) {
     return res.status(500).json({ message: 'Error fetching form', error: err.message });
+  }
+};
+
+// Get a form for frontend use without hitting the :id route.
+// Supports ?id=, ?email=, ?phone=, or falls back to the most recent form.
+exports.getFormLookup = async (req, res) => {
+  try {
+    const id = (req.query.id || req.params.id || '').toString().trim();
+    const email = (req.query.email || '').toString().trim().toLowerCase();
+    const phone = (req.query.phone || '').toString().trim();
+
+    let form = null;
+
+    if (id) {
+      form = await UserForm.findById(id).lean();
+    } else if (email || phone) {
+      const query = {};
+      if (email) query.email = email;
+      if (phone) query.phone = phone;
+      form = await UserForm.findOne(query).sort({ updatedAt: -1 }).lean();
+    } else {
+      form = await UserForm.findOne({}).sort({ updatedAt: -1 }).lean();
+    }
+
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Form fetched successfully',
+      data: form
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Error fetching form', error: err.message });
+  }
+};
+
+// PUT /getform?id=... -> update admin status/notes for frontend admin panel usage
+exports.updateFormLookup = async (req, res) => {
+  try {
+    const id = (req.query.id || req.body.id || '').toString().trim();
+    if (!id) {
+      return res.status(400).json({ message: 'Form id is required' });
+    }
+
+    const form = await UserForm.findById(id);
+    if (!form) return res.status(404).json({ message: 'Form not found' });
+
+    const updates = req.body || {};
+    const errors = [];
+
+    if (updates.adminStatus !== undefined) {
+      const normalizedStatus = normalizeAdminStatus(updates.adminStatus);
+      if (!normalizedStatus) {
+        errors.push({ field: 'adminStatus', message: 'Invalid admin status' });
+      } else {
+        form.adminStatus = normalizedStatus;
+      }
+    }
+
+    if (updates.status !== undefined) {
+      const normalizedStatus = normalizeAdminStatus(updates.status);
+      if (!normalizedStatus) {
+        errors.push({ field: 'status', message: 'Invalid status' });
+      } else {
+        form.adminStatus = normalizedStatus;
+      }
+    }
+
+    if (updates.adminNotes !== undefined) {
+      form.adminNotes = String(updates.adminNotes || '');
+    }
+
+    if (errors.length) {
+      return res.status(400).json({ message: 'Validation failed', errors });
+    }
+
+    await form.save();
+
+    return res.json({
+      success: true,
+      message: 'Form updated successfully',
+      data: form.getSummary()
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Error updating form', error: err.message });
   }
 };
 
@@ -203,6 +307,20 @@ exports.submitForm = async (req, res) => {
     form.agreements = Object.assign({}, form.agreements || {}, mergedAgreements);
     form.status = 'submitted';
     await form.save();
+
+    await createAdminNotification({
+      title: 'New form submission',
+      message: `${form.fullName || form.firstName || 'A user'} submitted the form`,
+      type: 'general',
+      link: '/admin/forms',
+      metadata: {
+        formId: form._id.toString(),
+        email: form.email,
+        status: form.status,
+        adminStatus: form.adminStatus
+      },
+      createdBy: null
+    });
 
     return res.json({ message: 'Form submitted', id: form._id.toString() });
   } catch (err) {

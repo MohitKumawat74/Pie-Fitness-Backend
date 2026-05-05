@@ -19,6 +19,7 @@ const ContactUsMessageRoute = require('./routes/ContactUsMessageRoute'); // Impo
 const paymentRoute = require('./routes/paymentRoute'); // Import payment routes
 const chatRoute = require('./routes/chatRoute'); // Import chat routes
 const aiChatbotRoute = require('./routes/aiChatbotRoute'); // Import AI chatbot routes
+const publicRoute = require('./routes/publicRoute'); // Import public routes
 const adminRoute = require('./admin/routes/adminRoute'); // Import admin routes
 
 const app = express();
@@ -165,7 +166,7 @@ app.use(cors({
     return callback(new Error('CORS policy does not allow access from the specified Origin.'), false);
   },
   credentials: CORS_ALLOW_CREDENTIALS,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
 
 // Serve static files from uploads directory
@@ -204,6 +205,7 @@ app.use('/api/payment', paymentRoute);
 app.use('/api/subscription', subscriptionRoute);
 app.use('/api/chat', chatRoute); // Chat routes
 app.use('/api/ai-chatbot', aiChatbotRoute); // AI Chatbot routes
+app.use('/api/public', publicRoute); // Public routes (no auth)
 app.use('/api/admin', adminRoute); // Admin routes
 
 // Socket.IO connection handling

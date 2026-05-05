@@ -1,5 +1,51 @@
 const RegisterUser = require('../../models/RegisterUser');
 
+function inferPlanTypeFromName(name) {
+  const key = String(name || '').toLowerCase().trim();
+  if (!key) return null;
+  if (key.includes('quarter')) return 'quarterly';
+  if (key.includes('half')) return 'halfYearly';
+  if (key.includes('year') || key.includes('annual')) return 'yearly';
+  if (key.includes('month')) return 'monthly';
+  return null;
+}
+
+function addMonths(date, months) {
+  const result = new Date(date);
+  const day = result.getDate();
+  result.setMonth(result.getMonth() + months);
+  if (result.getDate() !== day) {
+    result.setDate(0);
+  }
+  return result;
+}
+
+function normalizeSubscription(subscription, membershipPlan) {
+  if (!subscription) return null;
+
+  const planType = inferPlanTypeFromName(subscription.planType || subscription.planName || membershipPlan);
+  const monthsByPlan = {
+    monthly: 1,
+    quarterly: 3,
+    halfYearly: 6,
+    yearly: 12
+  };
+
+  const months = monthsByPlan[planType];
+  if (!months || !subscription.startDate) {
+    return subscription;
+  }
+
+  const startDate = new Date(subscription.startDate);
+  const endDate = addMonths(startDate, months);
+
+  return {
+    ...subscription,
+    startDate,
+    endDate
+  };
+}
+
 class UsersController {
   // Get all users
   static async getAllUsers(req, res) {
@@ -47,13 +93,21 @@ class UsersController {
         .skip(skip)
         .limit(parseInt(limit));
 
+      const normalizedUsers = users.map(user => {
+        const plainUser = user.toObject ? user.toObject() : user;
+        return {
+          ...plainUser,
+          subscription: normalizeSubscription(plainUser.subscription, plainUser.membershipPlan)
+        };
+      });
+
       const totalUsers = await RegisterUser.countDocuments(query);
       const totalPages = Math.ceil(totalUsers / parseInt(limit));
 
       res.status(200).json({
         success: true,
         data: {
-          users,
+          users: normalizedUsers,
           pagination: {
             currentPage: parseInt(page),
             totalPages,
@@ -94,6 +148,8 @@ class UsersController {
         });
       }
 
+      const normalizedUser = user.toObject ? user.toObject() : user;
+
       // Get user's payment history
       const Payment = require('../../models/Payment');
       const payments = await Payment.find({ userId })
@@ -103,7 +159,10 @@ class UsersController {
       res.status(200).json({
         success: true,
         data: {
-          user,
+          user: {
+            ...normalizedUser,
+            subscription: normalizeSubscription(normalizedUser.subscription, normalizedUser.membershipPlan)
+          },
           paymentHistory: payments
         }
       });

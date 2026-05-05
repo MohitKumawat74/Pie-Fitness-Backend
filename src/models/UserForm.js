@@ -11,7 +11,7 @@ const EmergencyContactSchema = new mongoose.Schema({
 const MembershipSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['monthly', 'quarterly', 'halfYearly', 'annually'],
+    enum: ['monthly', 'quarterly', 'halfYearly', 'annually', 'Basic', 'Premium', 'Family', 'Student', 'Other'],
     default: 'monthly',
   },
   duration: {
@@ -64,6 +64,12 @@ const UserFormSchema = new mongoose.Schema(
 
     // Meta
     status: { type: String, enum: ['draft', 'submitted', 'cancelled'], default: 'draft' },
+    adminStatus: {
+      type: String,
+      enum: ['pending', 'in-progress', 'approved', 'rejected', 'completed'],
+      default: 'pending'
+    },
+    adminNotes: { type: String, default: '' },
   },
   { timestamps: true }
 );
@@ -88,6 +94,8 @@ UserFormSchema.methods.getSummary = function () {
     agreements: this.agreements || null,
     payment: this.payment || null,
     status: this.status,
+    adminStatus: this.adminStatus,
+    adminNotes: this.adminNotes,
     createdAt: this.createdAt?.toISOString() ?? null,
     updatedAt: this.updatedAt?.toISOString() ?? null,
   };

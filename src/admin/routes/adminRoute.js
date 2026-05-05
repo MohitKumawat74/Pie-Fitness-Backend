@@ -13,9 +13,11 @@ const usersRoute = require('./usersRoute');
 const classesRoute = require('./classesRoute');
 const trainersRoute = require('./trainersRoute');
 const membershipsRoute = require('./membershipsRoute');
+const plansRoute = require('./plansRoute');
 const settingsRoute = require('./settingsRoute');
 const reportsRoute = require('./reportsRoute');
 const systemRoute = require('./systemRoute');
+const notificationsRoute = require('./notificationsRoute');
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoute);
@@ -38,8 +40,10 @@ router.use('/users', usersRoute);
 router.use('/classes', classesRoute);
 router.use('/trainers', trainersRoute);
 router.use('/memberships', membershipsRoute);
+router.use('/plans', plansRoute);
 router.use('/settings', settingsRoute);
 router.use('/reports', reportsRoute);
 router.use('/system', systemRoute);
+router.use('/notifications', notificationsRoute);
 
 module.exports = router;

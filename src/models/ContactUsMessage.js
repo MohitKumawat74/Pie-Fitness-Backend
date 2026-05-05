@@ -14,8 +14,16 @@ const contactUsMessageSchema = new mongoose.Schema({
         required: true
     },
     phone:{
-        type: Number,
-        required: true
+        type: String,
+        required: true,
+        trim: true,
+        validate: {
+            validator: function(value) {
+                const digits = String(value || '').replace(/\D/g, '');
+                return digits.length >= 7 && digits.length <= 15;
+            },
+            message: 'Phone number must contain 7 to 15 digits'
+        }
     },
     message: {
         type: String,
@@ -23,8 +31,12 @@ const contactUsMessageSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['new', 'in_progress', 'resolved', 'closed'],
+        enum: ['new', 'pending', 'in_progress', 'approved', 'rejected', 'resolved', 'closed', 'completed'],
         default: 'new'
+    },
+    adminNotes: {
+        type: String,
+        default: ''
     },
     priority: {
         type: String,
